@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "UserStatus" AS ENUM ('PENDING', 'ACTIVE', 'REJECTED');
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE';
