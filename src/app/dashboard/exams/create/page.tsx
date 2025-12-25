@@ -401,6 +401,12 @@ export default function CreateExamPage() {
                       className="min-h-[300px] font-mono"
                       value={batchText}
                       onChange={(e) => setBatchText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                          e.preventDefault();
+                          handleBatchAdd();
+                        }
+                      }}
                     />
                   </div>
                   <DialogFooter>

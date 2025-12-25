@@ -12,6 +12,7 @@ const SimpleBreadcrumb = ({ path }: { path: string }) => {
     exams: "考试管理",
     create: "创建考试",
     students: "学生管理",
+    classes: "班级管理",
     settings: "设置",
     submissions: "提交记录",
     exam: "考试",

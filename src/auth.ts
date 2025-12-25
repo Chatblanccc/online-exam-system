@@ -39,6 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { username },
+          include: { grade: true },
         });
 
         if (!user) {
@@ -52,6 +53,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (user.status !== UserStatus.ACTIVE) {
           return null; // Reject if not active
+        }
+
+        // Check if class is active
+        if (user.grade && user.grade.status !== "ACTIVE") {
+          return null;
         }
 
         return {

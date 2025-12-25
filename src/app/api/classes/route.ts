@@ -5,7 +5,11 @@ import { Role } from "@/generated/prisma/client";
 
 export async function GET() {
   // Allow unauthenticated access for registration dropdown
+  // Only return ACTIVE classes for registration
   const classes = await prisma.grade.findMany({
+    where: {
+      status: "ACTIVE",
+    },
     orderBy: { name: "asc" },
     include: {
       _count: {

@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ClassActions } from "./class-actions";
 import {
   Card,
   CardContent,
@@ -36,6 +38,7 @@ import { Label } from "@/components/ui/label";
 interface ClassWithCount {
   id: string;
   name: string;
+  status: "ACTIVE" | "DISABLED";
   _count: {
     users: number;
   };
@@ -47,7 +50,6 @@ interface ClassManagementClientProps {
 
 export function ClassManagementClient({ initialClasses }: ClassManagementClientProps) {
   const router = useRouter();
-  const [classes, setClasses] = useState(initialClasses);
   const [newClassName, setNewClassName] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -82,9 +84,27 @@ export function ClassManagementClient({ initialClasses }: ClassManagementClientP
     }
   };
 
-  const handleDeleteClass = async (classId: string) => {
-    if (!confirm("确定要删除该班级吗？")) return;
+  const handleStatusChange = async (classId: string, status: "ACTIVE" | "DISABLED") => {
+    try {
+      const res = await fetch(`/api/classes/${classId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
 
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "更新失败");
+      }
+
+      toast.success(status === "ACTIVE" ? "班级已启用" : "班级已禁用");
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleDeleteClass = async (classId: string) => {
     try {
       const res = await fetch(`/api/classes/${classId}`, {
         method: "DELETE",
@@ -156,6 +176,7 @@ export function ClassManagementClient({ initialClasses }: ClassManagementClientP
             <TableHeader>
               <TableRow>
                 <TableHead>班级名称</TableHead>
+                <TableHead>状态</TableHead>
                 <TableHead>学生人数</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
@@ -165,20 +186,22 @@ export function ClassManagementClient({ initialClasses }: ClassManagementClientP
                 <TableRow key={cls.id}>
                   <TableCell className="font-medium">{cls.name}</TableCell>
                   <TableCell>
+                    <Badge variant={cls.status === "ACTIVE" ? "secondary" : "destructive"} className={cls.status === "ACTIVE" ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}>
+                      {cls.status === "ACTIVE" ? "启用中" : "已禁用"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       {cls._count.users}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteClass(cls.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <ClassActions 
+                      classItem={cls} 
+                      onStatusChange={(status) => handleStatusChange(cls.id, status)}
+                      onDelete={() => handleDeleteClass(cls.id)}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

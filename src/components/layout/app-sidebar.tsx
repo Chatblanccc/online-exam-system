@@ -86,7 +86,6 @@ export function AppSidebar({ className }: SidebarProps) {
       icon: Settings,
       href: "/dashboard/settings",
       active: pathname === "/dashboard/settings",
-      disabled: true,
     },
   ];
 
