@@ -11,6 +11,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -278,36 +286,101 @@ export default function ExamTakeClient({ exam }: { exam: ExamPayload }) {
                     {question.content}
                     </p>
                 ) : null}
-                <div>
+                <div className="min-h-10 flex items-center">
                     {question.type === "SHORT_ANSWER" ? (
-                    <Textarea
+                      <Textarea
+                          value={answers[question.id] ?? ""}
+                          onChange={(event) =>
+                          setAnswers((prev) => ({
+                              ...prev,
+                              [question.id]: event.target.value,
+                          }))
+                          }
+                          placeholder="请输入答案..."
+                          className="resize-none bg-background border-muted/20 focus:border-primary/30"
+                          rows={3}
+                      />
+                    ) : question.type === "SINGLE_CHOICE" ? (
+                      <Select
                         value={answers[question.id] ?? ""}
-                        onChange={(event) =>
-                        setAnswers((prev) => ({
+                        onValueChange={(value) =>
+                          setAnswers((prev) => ({
                             ...prev,
-                            [question.id]: event.target.value,
-                        }))
+                            [question.id]: value,
+                          }))
                         }
-                        placeholder="请输入答案..."
-                        className="resize-none bg-background"
-                        rows={3}
-                    />
+                      >
+                        <SelectTrigger className="w-full bg-background border-muted/20">
+                          <SelectValue placeholder="选择答案" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["A", "B", "C", "D"].map((opt) => (
+                            <SelectItem key={opt} value={opt}>
+                              选项 {opt}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : question.type === "TRUE_FALSE" ? (
+                      <Select
+                        value={answers[question.id] ?? ""}
+                        onValueChange={(value) =>
+                          setAnswers((prev) => ({
+                            ...prev,
+                            [question.id]: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-full bg-background border-muted/20">
+                          <SelectValue placeholder="选择答案" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="√">√ 正确</SelectItem>
+                          <SelectItem value="×">× 错误</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : question.type === "MULTIPLE_CHOICE" ? (
+                      <div className="w-full flex flex-col gap-2">
+                         <ToggleGroup
+                            type="multiple"
+                            variant="outline"
+                            className="justify-start gap-2"
+                            value={(answers[question.id] ?? "").split("").filter(Boolean)}
+                            onValueChange={(vals) => {
+                                // 保持字母顺序
+                                const sorted = vals.sort().join("");
+                                setAnswers((prev) => ({
+                                    ...prev,
+                                    [question.id]: sorted,
+                                }));
+                            }}
+                        >
+                            {["A", "B", "C", "D"].map((opt) => (
+                                <ToggleGroupItem 
+                                    key={opt} 
+                                    value={opt} 
+                                    className="w-10 h-10 rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                >
+                                    {opt}
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
+                        <p className="text-[10px] text-muted-foreground ml-1">
+                          已选: {answers[question.id] || "无"}
+                        </p>
+                      </div>
                     ) : (
-                    <Input
-                        value={answers[question.id] ?? ""}
-                        onChange={(event) =>
-                        setAnswers((prev) => ({
-                            ...prev,
-                            [question.id]: event.target.value,
-                        }))
-                        }
-                        placeholder={
-                        question.type === "MULTIPLE_CHOICE"
-                            ? "多个答案请用逗号分隔"
-                            : "请输入答案"
-                        }
-                        className="bg-background"
-                    />
+                      <Input
+                          value={answers[question.id] ?? ""}
+                          onChange={(event) =>
+                          setAnswers((prev) => ({
+                              ...prev,
+                              [question.id]: event.target.value,
+                          }))
+                          }
+                          placeholder="请输入答案"
+                          className="bg-background border-muted/20"
+                      />
                     )}
                 </div>
                 </div>

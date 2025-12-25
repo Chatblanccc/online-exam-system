@@ -33,13 +33,21 @@ export function gradeAnswers(
 
     if (
       question.type === QuestionType.SINGLE_CHOICE ||
-      question.type === QuestionType.TRUE_FALSE
+      question.type === QuestionType.TRUE_FALSE ||
+      question.type === QuestionType.SHORT_ANSWER
     ) {
       const expected = question.correctAnswer
         ? normalize(question.correctAnswer)
         : "";
       const actual = normalize(answer.answerValue);
-      isCorrect = expected.length > 0 && actual === expected;
+      
+      if (question.type === QuestionType.SHORT_ANSWER) {
+        // 对于简答题/操作题，如果包含关键词即视为正确（简单逻辑）
+        isCorrect = expected.length > 0 && actual.includes(expected);
+      } else {
+        isCorrect = expected.length > 0 && actual === expected;
+      }
+      
       scoreObtained = isCorrect ? question.points : 0;
     }
 

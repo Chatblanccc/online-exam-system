@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Command } from "lucide-react";
@@ -18,6 +18,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -39,6 +44,32 @@ export default function LoginPage() {
 
     router.push("/");
   };
+
+  if (!mounted) {
+    return (
+      <div className="container relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+        <div className="relative hidden h-full flex-col bg-zinc-900 p-10 text-white lg:flex dark:border-r overflow-hidden">
+          <div className="relative z-20 flex items-center text-lg font-medium">
+            <Command className="mr-2 h-6 w-6" />
+            ExamSystem Inc
+          </div>
+        </div>
+        <div className="lg:p-8 flex h-full items-center justify-center">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <div className="flex flex-col space-y-2 text-center">
+              <div className="h-8 w-48 bg-muted animate-pulse mx-auto rounded" />
+              <div className="h-4 w-64 bg-muted animate-pulse mx-auto rounded mt-2" />
+            </div>
+            <div className="grid gap-6">
+              <div className="h-10 w-full bg-muted animate-pulse rounded" />
+              <div className="h-10 w-full bg-muted animate-pulse rounded" />
+              <div className="h-10 w-full bg-muted animate-pulse rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
@@ -71,14 +102,14 @@ export default function LoginPage() {
           </div>
           <div className={cn("grid gap-6")}>
             <form onSubmit={onSubmit}>
-              <div className="grid gap-2">
-                <div className="grid gap-1">
+              <div className="grid gap-6">
+                <div className="grid gap-5">
                   <Label className="sr-only" htmlFor="username">
                     用户名
                   </Label>
                   <Input
                     id="username"
-                    placeholder="name@example.com"
+                    placeholder="用户名"
                     type="text"
                     autoCapitalize="none"
                     autoComplete="username"
@@ -109,7 +140,7 @@ export default function LoginPage() {
                   {loading && (
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   )}
-                  使用凭证登录
+                  登录
                 </Button>
               </div>
             </form>
@@ -120,7 +151,7 @@ export default function LoginPage() {
               href="/register"
               className="underline underline-offset-4 hover:text-primary"
             >
-              注册学生账户
+              注册新账户
             </Link>
           </p>
         </div>

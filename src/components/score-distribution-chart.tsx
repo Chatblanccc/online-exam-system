@@ -49,17 +49,17 @@ export function ScoreDistributionChart({ data }: { data: ExamTrendData[] }) {
             domain={[0, 100]}
           />
           <Tooltip 
-            cursor={{ stroke: "hsl(var(--muted-foreground)/0.3)", strokeWidth: 1 }}
+            cursor={{ stroke: "#94a3b8", strokeWidth: 1 }}
             contentStyle={{ 
-              backgroundColor: "hsl(var(--card))", 
-              borderColor: "hsl(var(--border))",
+              backgroundColor: "white", 
+              borderColor: "#e2e8f0",
               borderRadius: "0.5rem",
-              color: "hsl(var(--card-foreground))",
+              color: "#0f172a",
               boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
               padding: "8px 12px",
             }}
-            itemStyle={{ color: "hsl(var(--primary))", fontWeight: 500 }}
-            labelStyle={{ color: "hsl(var(--muted-foreground))", marginBottom: "4px" }}
+            itemStyle={{ color: "#2563eb", fontWeight: 500 }}
+            labelStyle={{ color: "#64748b", marginBottom: "4px" }}
             formatter={(value: number) => [`${value}%`, "平均得分率"]}
           />
           <Line 

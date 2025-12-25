@@ -59,12 +59,12 @@ export function ClassPerformanceChart({ data }: { data: ClassData[] }) {
             width={80}
           />
           <Tooltip 
-            cursor={{ fill: "hsl(var(--muted)/0.3)", radius: 4 }}
+            cursor={false}
             contentStyle={{ 
-              backgroundColor: "hsl(var(--card))", 
-              borderColor: "hsl(var(--border))",
+              backgroundColor: "white", 
+              borderColor: "#e2e8f0",
               borderRadius: "0.5rem",
-              color: "hsl(var(--card-foreground))",
+              color: "#0f172a",
               boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
               padding: "8px 12px",
             }}

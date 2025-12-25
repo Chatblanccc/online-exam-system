@@ -25,5 +25,18 @@ export default async function ExamTakePage({
     notFound();
   }
 
-  return <ExamTakeClient exam={exam} />;
+  return (
+    <ExamTakeClient
+      exam={{
+        ...exam,
+        questions: exam.questions.map((q) => ({
+          id: q.id,
+          order: q.order,
+          type: q.type,
+          points: q.points,
+          content: q.content,
+        })),
+      }}
+    />
+  );
 }

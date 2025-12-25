@@ -1,7 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Plus, Trash2, ListPlus, FileText, Info } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -49,6 +61,7 @@ const createQuestion = (order: number): QuestionForm => ({
 });
 
 export default function CreateExamPage() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState(60);
   const [totalScore, setTotalScore] = useState(100);
@@ -57,6 +70,8 @@ export default function CreateExamPage() {
     createQuestion(1),
   ]);
   const [loading, setLoading] = useState(false);
+  const [batchText, setBatchText] = useState("");
+  const [showBatchDialog, setShowBatchDialog] = useState(false);
 
   const totalPoints = useMemo(
     () => questions.reduce((sum, question) => sum + question.points, 0),
@@ -74,6 +89,122 @@ export default function CreateExamPage() {
 
   const addQuestion = () => {
     setQuestions((prev) => [...prev, createQuestion(prev.length + 1)]);
+  };
+
+  const handleBatchAdd = () => {
+    if (!batchText.trim()) return;
+
+    const lines = batchText.trim().split("\n");
+    const newQuestions: QuestionForm[] = [];
+    let currentOrder = questions.length + 1;
+
+    lines.forEach((line) => {
+      // 检查是否有前置分值定义 (例如 2 | 1. int | 2. if)
+      let lineDefaultPoints: number | null = null;
+      let processingLine = line.trim();
+      const pointsPrefixMatch = processingLine.match(/^(\d+)\s*\|\s*/);
+      if (pointsPrefixMatch) {
+        lineDefaultPoints = parseInt(pointsPrefixMatch[1]);
+        processingLine = processingLine.replace(/^(\d+)\s*\|\s*/, "");
+      }
+
+      // 检查是否包含冒号且有空格分隔的答案列表 (例如 1-5: B B C A B)
+      const rangeListMatch = processingLine.match(/(\d+)-(\d+):\s*([A-Z|√|×|对|错|\s]+)/gi);
+      if (rangeListMatch) {
+        rangeListMatch.forEach(segment => {
+          const partMatch = segment.match(/(\d+)-(\d+):\s*([A-Z|√|×|对|错|\s]+)/i);
+          if (partMatch) {
+            const start = parseInt(partMatch[1]);
+            const end = parseInt(partMatch[2]);
+            const answers = partMatch[3].trim().split(/\s+/);
+            
+            answers.forEach((ans, idx) => {
+              const answer = ans.toUpperCase();
+              if (answer && (start + idx <= end)) {
+                const type = answer === "√" || answer === "×" || ["对", "错"].includes(answer) ? "TRUE_FALSE" : (answer.length > 1 && !/^[A-Z]+$/.test(answer) ? "SHORT_ANSWER" : (answer.length > 1 ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE"));
+                
+                newQuestions.push({
+                  id: createQuestionId(),
+                  order: currentOrder++,
+                  type,
+                  points: lineDefaultPoints ?? (type === "SHORT_ANSWER" ? 4 : 2),
+                  content: "",
+                  correctAnswer: answer.replace("对", "√").replace("错", "×"),
+                });
+              }
+            });
+          }
+        });
+        return;
+      }
+
+      // 检查是否包含分隔符 | (例如 1.A | 2.B 或 1.int | 2.if)
+      if (processingLine.includes("|") || processingLine.match(/\d+\.\s*[^|]+/)) {
+        const matches = Array.from(processingLine.matchAll(/(\d+)\.?\s*([^|]+)/gi));
+        matches.forEach((match) => {
+          const rawValue = match[2].trim();
+          // 只有全大写的 A-F 且长度不超过 4 才识别为选择题
+          const isChoice = /^[A-F]{1,4}$/.test(rawValue);
+          const isTrueFalse = /^[√|×|对|错]$/.test(rawValue);
+          const type = isTrueFalse ? "TRUE_FALSE" : (isChoice ? (rawValue.length > 1 ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE") : "SHORT_ANSWER");
+          
+          newQuestions.push({
+            id: createQuestionId(),
+            order: currentOrder++,
+            type,
+            points: lineDefaultPoints ?? (type === "SHORT_ANSWER" ? 4 : 2),
+            content: "", 
+            correctAnswer: isChoice || isTrueFalse ? rawValue.toUpperCase().replace("对", "√").replace("错", "×") : rawValue, // 操作题存入答案
+          });
+        });
+        return;
+      }
+
+      // 匹配之前的格式: 1. A (5分) 或 1-5 A (每题2分)
+      const rangeMatch = line.match(/^(\d+)-(\d+)\s+([A-Z|√|×|对|错]+)(\s+\((\d+)分\))?/i);
+      const singleMatch = line.match(/^(\d+)\.?\s+([A-Z|√|×|对|错]+)(\s+\((\d+)分\))?/i);
+
+      if (rangeMatch) {
+        const start = parseInt(rangeMatch[1]);
+        const end = parseInt(rangeMatch[2]);
+        const answer = rangeMatch[3].toUpperCase();
+        const type = answer === "√" || answer === "×" || ["对", "错"].includes(answer) ? "TRUE_FALSE" : (answer.length > 1 ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE");
+        const points = rangeMatch[5] ? parseInt(rangeMatch[5]) : (lineDefaultPoints ?? (type === "SHORT_ANSWER" ? 4 : 2));
+
+        for (let i = start; i <= end; i++) {
+          newQuestions.push({
+            id: createQuestionId(),
+            order: currentOrder++,
+            type,
+            points,
+            content: "",
+            correctAnswer: answer.replace("对", "√").replace("错", "×"),
+          });
+        }
+      } else if (singleMatch) {
+        const answer = singleMatch[2].toUpperCase();
+        const type = answer === "√" || answer === "×" || ["对", "错"].includes(answer) ? "TRUE_FALSE" : (answer.length > 1 ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE");
+        const points = singleMatch[4] ? parseInt(singleMatch[4]) : (lineDefaultPoints ?? (type === "SHORT_ANSWER" ? 4 : 2));
+
+        newQuestions.push({
+          id: createQuestionId(),
+          order: currentOrder++,
+          type,
+          points,
+          content: "",
+          correctAnswer: answer.replace("对", "√").replace("错", "×"),
+        });
+      }
+    });
+
+    if (newQuestions.length > 0) {
+      setQuestions((prev) => [...prev, ...newQuestions]);
+      setBatchText("");
+      setShowBatchDialog(false);
+      toast.success(`成功批量添加 ${newQuestions.length} 道题目`);
+    } else {
+      toast.error("未能识别题目格式，请检查输入内容");
+    }
   };
 
   const removeQuestion = (id: string) => {
@@ -236,28 +367,82 @@ export default function CreateExamPage() {
                 选择题和判断题将自动判分，简答题需手动评分。
               </p>
             </div>
-            <Button type="button" variant="outline" onClick={addQuestion}>
-              添加题目
-            </Button>
+            <div className="flex gap-2">
+              <Dialog open={showBatchDialog} onOpenChange={setShowBatchDialog}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline">
+                    <ListPlus className="mr-2 h-4 w-4" /> 批量添加
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>批量添加题目</DialogTitle>
+                    <DialogDescription>
+                      通过文本格式快速导入题目和答案，每行一个。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Alert variant="secondary" className="bg-muted/50">
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>格式说明</AlertTitle>
+                      <AlertDescription className="text-xs space-y-1">
+                        <p>1. 简易列表: <strong>1.A | 2.B | 3.√</strong></p>
+                        <p>2. 操作题(提示): <strong>4. int | 5. if | 6. def</strong></p>
+                        <p>3. 分值前缀: <strong>5 | 1-10: A B C...</strong> (每题5分)</p>
+                        <p>4. 复合范围: <strong>1-5: A B C A B | 6-10: √ × √ √ ×</strong></p>
+                      </AlertDescription>
+                    </Alert>
+                    <Textarea
+                      placeholder="例如:
+1-10 A (2分)
+11-15 √ (2分)
+16. B (5分)
+17. ABCD (5分)"
+                      className="min-h-[300px] font-mono"
+                      value={batchText}
+                      onChange={(e) => setBatchText(e.target.value)}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setShowBatchDialog(false)}>
+                      取消
+                    </Button>
+                    <Button onClick={handleBatchAdd}>
+                      确认导入
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Button type="button" variant="outline" onClick={addQuestion}>
+                <Plus className="mr-2 h-4 w-4" /> 添加题目
+              </Button>
+            </div>
           </div>
 
           <div className="mt-6 space-y-4">
             {questions.map((question, index) => (
               <div
                 key={question.id}
-                className="rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] p-5"
+                className="group relative rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] p-5 transition-all hover:border-[var(--shell-muted)]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-[var(--shell-muted)]">
-                    题目 {index + 1}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      {index + 1}
+                    </span>
+                    <span className="text-sm font-medium text-[var(--shell-muted)]">
+                      {questionTypes.find(t => t.value === question.type)?.label}
+                    </span>
+                  </div>
                   {questions.length > 1 ? (
                     <Button
                       type="button"
                       variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={() => removeQuestion(question.id)}
                     >
-                      删除
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   ) : null}
                 </div>
@@ -328,9 +513,21 @@ export default function CreateExamPage() {
           </div>
         </Card>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={loading}>
-            {loading ? "创建中..." : "发布考试"}
+        <div className="flex justify-end gap-3 mt-10">
+          <Button type="button" variant="ghost" onClick={() => router.back()}>
+            取消
+          </Button>
+          <Button type="submit" disabled={loading} className="min-w-[120px]">
+            {loading ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                发布中...
+              </>
+            ) : (
+              <>
+                <FileText className="mr-2 h-4 w-4" /> 发布考试
+              </>
+            )}
           </Button>
         </div>
       </form>
