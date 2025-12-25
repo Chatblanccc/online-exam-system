@@ -9,6 +9,7 @@ import {
   Settings,
   GraduationCap,
   Users,
+  BarChart3,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -38,6 +39,12 @@ export function AppSidebar({ className }: SidebarProps) {
       icon: LayoutDashboard,
       href: "/dashboard/overview",
       active: pathname === "/dashboard/overview",
+    },
+    {
+      label: "数据分析",
+      icon: BarChart3,
+      href: "/dashboard/analysis",
+      active: pathname.includes("/dashboard/analysis"),
     },
     {
       label: "考试管理",

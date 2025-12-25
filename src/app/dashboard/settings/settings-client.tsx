@@ -147,7 +147,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserProfile }) {
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={profileLoading}>
+              <Button type="submit" disabled={profileLoading} className="my-2.5">
                 {profileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 保存更改
               </Button>
@@ -201,7 +201,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserProfile }) {
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={passwordLoading}>
+              <Button type="submit" disabled={passwordLoading} className="my-2.5">
                 {passwordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 更新密码
               </Button>

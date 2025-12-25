@@ -17,6 +17,7 @@ const SimpleBreadcrumb = ({ path }: { path: string }) => {
     submissions: "提交记录",
     exam: "考试",
     take: "答题",
+    analysis: "数据分析",
   };
 
   return (
